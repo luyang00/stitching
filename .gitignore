@@ -2,3 +2,4 @@
 CMakeCache.txt
 fisheye
 ./calibration/CMakeFiles
+./calibration/output
