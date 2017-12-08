@@ -1,0 +1,4 @@
+*.camke
+CMakeCache.txt
+fisheye
+./calibration/CMakeFiles
