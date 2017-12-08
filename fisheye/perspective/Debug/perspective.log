@@ -1,0 +1,7 @@
+﻿  affine.cpp
+c:\users\raytine\documents\visual studio 2015\projects\fisheye\fisheye\affine.cpp(60): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+c:\users\raytine\documents\visual studio 2015\projects\fisheye\fisheye\affine.cpp(61): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+c:\users\raytine\documents\visual studio 2015\projects\fisheye\fisheye\affine.cpp(62): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+c:\users\raytine\documents\visual studio 2015\projects\fisheye\fisheye\affine.cpp(63): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+  perspective.vcxproj -> C:\Users\Raytine\documents\visual studio 2015\Projects\fisheye\Debug\perspective.exe
+  perspective.vcxproj -> C:\Users\Raytine\documents\visual studio 2015\Projects\fisheye\Debug\perspective.pdb (Full PDB)

@@ -1,0 +1,6 @@
+﻿  fisheye.cpp
+c:\users\raytine\documents\visual studio 2015\projects\fisheye\fisheye\fisheye.cpp(56): warning C4018: “<”: 有符号/无符号不匹配
+c:\users\raytine\documents\visual studio 2015\projects\fisheye\fisheye\fisheye.cpp(94): warning C4244: “=”: 从“int”转换到“float”，可能丢失数据
+c:\users\raytine\documents\visual studio 2015\projects\fisheye\fisheye\fisheye.cpp(95): warning C4244: “=”: 从“int”转换到“float”，可能丢失数据
+  fisheye.vcxproj -> C:\Users\Raytine\documents\visual studio 2015\Projects\fisheye\Debug\fisheye.exe
+  fisheye.vcxproj -> C:\Users\Raytine\documents\visual studio 2015\Projects\fisheye\Debug\fisheye.pdb (Full PDB)
