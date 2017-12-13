@@ -208,9 +208,16 @@ int main()
 	{
 
 
-		cv::Matx33d perspective(17.61568269976336, 71.46329325056747, -10295.15826221645,
-		0.7985415050422513, 31.95046547710759, 2339.465089216165,
-		0.001237393328160838, 0.05617145073699414, 1);
+        cv::Matx33d perspective(0.436147879939063, -0.4690469124077435, 1036.048435923305,
+                                0.1588138837775173, -0.2714978927998979, 651.1974238736775,
+                                0.0002450980392156759, -0.0004268811460002734, 1);
+        
+        /*
+         cv::Matx33d perspective(0.4652648042748118, -0.4589132489030049, 1045.752052830639,
+         0.1493320154667193, -0.2337981166094809, 577.5665377764891,
+         0.0002661076595558013, -0.0004173545640178841, 1);*/
+        
+        
 
 //  		cv::Matx33d perspective(0,-1,0,
 //  			1,0,0,
@@ -220,15 +227,37 @@ int main()
 		Mat output;
 		Rect a=Rect();
 		cout << "TestImage ..." << endl;
-		Mat testImage = imread("./images/raw.jpg", 1);
+		
 		Matx33d newk,newk1;
 		Size newsize = Size(image_size.width*2, image_size.height*2);
 		fisheye::estimateNewCameraMatrixForUndistortRectify(intrinsic_matrix, distortion_coeffs,image_size, Mat::eye(3, 3, CV_32F), newk, 0.8,newsize);
 		newk1 = perspective*newk;
 		fisheye::initUndistortRectifyMap(intrinsic_matrix, distortion_coeffs, R, newk, newsize, CV_32FC1, mapx, mapy);
-		cv::remap(testImage, output, mapx, mapy, INTER_LINEAR);
-		imwrite("./output/distortOutput.jpg", output);
-		cout << "保存结束" << endl;
+       
+        
+        image_count = 4;
+        for (int i = 0; i != image_count; i++)
+        {
+            cout << "正在矫正" << i << "..." << endl;
+            string imageFileName;
+            std::stringstream StrStm;
+            StrStm << i;
+            StrStm >> imageFileName;
+            imageFileName += ".jpg";
+            //         cv::Mat readimage = imread("c:/test/" + imageFileName);
+            //         cv::Mat image=Mat(1280,1280,CV_8UC3, Scalar(0, 0, 0));
+            //         Mat imageROI = image(Rect(0, 280, 1280, 720));
+            //         readimage.copyTo(imageROI,readimage);
+              cout<< "./images" + imageFileName << endl;
+            Mat testImage = imread("./input/" + imageFileName);
+        
+            cout<< "./images" + imageFileName << endl;
+            cv::remap(testImage, output, mapx, mapy, INTER_LINEAR);
+            imwrite("./output/distort"+imageFileName, output);
+            cout << "保存" << endl;
+        }
+            
+            
 
 		Mat perspectiveImage;
 		cv::warpPerspective(output,
@@ -238,6 +267,10 @@ int main()
 			cv::INTER_LINEAR | cv::WARP_INVERSE_MAP);
 		imshow("perspective",perspectiveImage);
         imwrite("./output/perspectiveOutput.jpg",perspectiveImage);
+        
+        Mat imageROI = perspectiveImage(Range(1880,perspectiveImage.rows),Range(50,perspectiveImage.cols));
+        imwrite("./output/ROIperspective.jpg",imageROI);
+        imshow("ROI",imageROI);
 		cv::waitKey(0);
 	}
 
