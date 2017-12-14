@@ -12,8 +12,9 @@ set( OpenCV_DIR /Users/yang/Code/opencv-2.4.13.4/release/)
 find_package( OpenCV REQUIRED )    
   
 #向工程添加源文件                                         
- 
+add_executable( mask mask.cpp)
 add_executable( stitching stitching.cpp) 
 
 #添加链接库                                   
 target_link_libraries( stitching ${OpenCV_LIBS} ) 
+target_link_libraries( mask ${OpenCV_LIBS} ) 

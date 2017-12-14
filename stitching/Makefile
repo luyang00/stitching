@@ -123,6 +123,46 @@ stitching/fast:
 	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/build
 .PHONY : stitching/fast
 
+#=============================================================================
+# Target rules for targets named mask
+
+# Build rule for target.
+mask: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 mask
+.PHONY : mask
+
+# fast build rule for target.
+mask/fast:
+	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/build
+.PHONY : mask/fast
+
+mask.o: mask.cpp.o
+
+.PHONY : mask.o
+
+# target to build an object file
+mask.cpp.o:
+	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/mask.cpp.o
+.PHONY : mask.cpp.o
+
+mask.i: mask.cpp.i
+
+.PHONY : mask.i
+
+# target to preprocess a source file
+mask.cpp.i:
+	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/mask.cpp.i
+.PHONY : mask.cpp.i
+
+mask.s: mask.cpp.s
+
+.PHONY : mask.s
+
+# target to generate assembly for a file
+mask.cpp.s:
+	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/mask.cpp.s
+.PHONY : mask.cpp.s
+
 stitching.o: stitching.cpp.o
 
 .PHONY : stitching.o
@@ -159,6 +199,10 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... stitching"
+	@echo "... mask"
+	@echo "... mask.o"
+	@echo "... mask.i"
+	@echo "... mask.s"
 	@echo "... stitching.o"
 	@echo "... stitching.i"
 	@echo "... stitching.s"

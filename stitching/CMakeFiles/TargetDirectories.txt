@@ -1,3 +1,4 @@
 /Users/yang/Code/stitching/stitching/CMakeFiles/rebuild_cache.dir
 /Users/yang/Code/stitching/stitching/CMakeFiles/edit_cache.dir
 /Users/yang/Code/stitching/stitching/CMakeFiles/stitching.dir
+/Users/yang/Code/stitching/stitching/CMakeFiles/mask.dir
