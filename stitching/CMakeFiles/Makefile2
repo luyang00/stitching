@@ -60,13 +60,50 @@ CMAKE_SOURCE_DIR = /Users/yang/Code/stitching/stitching
 CMAKE_BINARY_DIR = /Users/yang/Code/stitching/stitching
 
 #=============================================================================
+# Target rules for target CMakeFiles/test_gpu.dir
+
+# All Build rule for target.
+CMakeFiles/test_gpu.dir/all:
+	$(MAKE) -f CMakeFiles/test_gpu.dir/build.make CMakeFiles/test_gpu.dir/depend
+	$(MAKE) -f CMakeFiles/test_gpu.dir/build.make CMakeFiles/test_gpu.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/yang/Code/stitching/stitching/CMakeFiles --progress-num=3 "Built target test_gpu"
+.PHONY : CMakeFiles/test_gpu.dir/all
+
+# Include target in all.
+all: CMakeFiles/test_gpu.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/test_gpu.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/yang/Code/stitching/stitching/CMakeFiles 1
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/test_gpu.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/yang/Code/stitching/stitching/CMakeFiles 0
+.PHONY : CMakeFiles/test_gpu.dir/rule
+
+# Convenience name for target.
+test_gpu: CMakeFiles/test_gpu.dir/rule
+
+.PHONY : test_gpu
+
+# clean rule for target.
+CMakeFiles/test_gpu.dir/clean:
+	$(MAKE) -f CMakeFiles/test_gpu.dir/build.make CMakeFiles/test_gpu.dir/clean
+.PHONY : CMakeFiles/test_gpu.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/test_gpu.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
 # Target rules for target CMakeFiles/stitching.dir
 
 # All Build rule for target.
 CMakeFiles/stitching.dir/all:
 	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/depend
 	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/yang/Code/stitching/stitching/CMakeFiles --progress-num=3,4 "Built target stitching"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/yang/Code/stitching/stitching/CMakeFiles --progress-num=1,2 "Built target stitching"
 .PHONY : CMakeFiles/stitching.dir/all
 
 # Include target in all.
@@ -93,43 +130,6 @@ CMakeFiles/stitching.dir/clean:
 
 # clean rule for target.
 clean: CMakeFiles/stitching.dir/clean
-
-.PHONY : clean
-
-#=============================================================================
-# Target rules for target CMakeFiles/mask.dir
-
-# All Build rule for target.
-CMakeFiles/mask.dir/all:
-	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/depend
-	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/yang/Code/stitching/stitching/CMakeFiles --progress-num=1,2 "Built target mask"
-.PHONY : CMakeFiles/mask.dir/all
-
-# Include target in all.
-all: CMakeFiles/mask.dir/all
-
-.PHONY : all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/mask.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/yang/Code/stitching/stitching/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/mask.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/yang/Code/stitching/stitching/CMakeFiles 0
-.PHONY : CMakeFiles/mask.dir/rule
-
-# Convenience name for target.
-mask: CMakeFiles/mask.dir/rule
-
-.PHONY : mask
-
-# clean rule for target.
-CMakeFiles/mask.dir/clean:
-	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/clean
-.PHONY : CMakeFiles/mask.dir/clean
-
-# clean rule for target.
-clean: CMakeFiles/mask.dir/clean
 
 .PHONY : clean
 

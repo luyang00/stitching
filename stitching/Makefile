@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named test_gpu
+
+# Build rule for target.
+test_gpu: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test_gpu
+.PHONY : test_gpu
+
+# fast build rule for target.
+test_gpu/fast:
+	$(MAKE) -f CMakeFiles/test_gpu.dir/build.make CMakeFiles/test_gpu.dir/build
+.PHONY : test_gpu/fast
+
+#=============================================================================
 # Target rules for targets named stitching
 
 # Build rule for target.
@@ -122,46 +135,6 @@ stitching: cmake_check_build_system
 stitching/fast:
 	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/build
 .PHONY : stitching/fast
-
-#=============================================================================
-# Target rules for targets named mask
-
-# Build rule for target.
-mask: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 mask
-.PHONY : mask
-
-# fast build rule for target.
-mask/fast:
-	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/build
-.PHONY : mask/fast
-
-mask.o: mask.cpp.o
-
-.PHONY : mask.o
-
-# target to build an object file
-mask.cpp.o:
-	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/mask.cpp.o
-.PHONY : mask.cpp.o
-
-mask.i: mask.cpp.i
-
-.PHONY : mask.i
-
-# target to preprocess a source file
-mask.cpp.i:
-	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/mask.cpp.i
-.PHONY : mask.cpp.i
-
-mask.s: mask.cpp.s
-
-.PHONY : mask.s
-
-# target to generate assembly for a file
-mask.cpp.s:
-	$(MAKE) -f CMakeFiles/mask.dir/build.make CMakeFiles/mask.dir/mask.cpp.s
-.PHONY : mask.cpp.s
 
 stitching.o: stitching.cpp.o
 
@@ -198,11 +171,8 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
+	@echo "... test_gpu"
 	@echo "... stitching"
-	@echo "... mask"
-	@echo "... mask.o"
-	@echo "... mask.i"
-	@echo "... mask.s"
 	@echo "... stitching.o"
 	@echo "... stitching.i"
 	@echo "... stitching.s"
