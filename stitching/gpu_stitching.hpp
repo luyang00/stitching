@@ -42,6 +42,7 @@ private:
     cv::gpu::GpuMat gpu_image[4];
     cv::gpu::GpuMat gpu_undistortImg[4];
     cv::gpu::GpuMat GPU_masks[8],GPU_masks_fusion[8],gpu_mapx[4],gpu_mapy[4];
+   
 
     
     //temp solution

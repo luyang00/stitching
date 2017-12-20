@@ -29,8 +29,6 @@
 #include "cuda_runtime_api.h"
 #include "opencv2/gpu/gpu.hpp"
 #include "gpu_stitching.hpp"
-//Multi thread
-#include<pthread.h>
 
 //APT::AptColor *apt_color=NULL;
 #define PIXEL_FORMAT "YUV422"
@@ -44,10 +42,6 @@ const int height=720;
 using namespace cv;
 //cv::Mat rgb;
 bool addLine=false;
-
-float * p_Img[4];
-
-
 typedef struct
 {
     void *start;
@@ -308,7 +302,7 @@ int read_frame(camera_v4l2_core *camera,int cameraID,float * p_Img)
     }
     
     cv::Mat yuv_8bit(height,width,CV_8UC2,camera->user_buffer.user_buffer[buf.index].start);
-    yuv_8bit=yuv_8bit.clone();
+    //yuv_8bit=yuv_8bit.clone();
     if(-1==ioctl(camera->fd,VIDIOC_QBUF,&buf))
     {
         perror("VIDIOC_QBUF error\n");
@@ -316,17 +310,7 @@ int read_frame(camera_v4l2_core *camera,int cameraID,float * p_Img)
     }
     
     
-    
-    int pixel_num=height*width*2;
-    time_t start_clock=clock();
-    //    convert8bit(yuv_10bit.ptr(),yuv_8bit.ptr(),pixel_num);
-    time_t end_clock=clock();
-    //LOG(INFO)<<"convert8bit cost time:"<<(end_clock-start_clock)/(float)CLOCKS_PER_SEC;
-    start_clock=clock();
-    
-    end_clock=clock();
-    //LOG(INFO)<<"send cost time:"<<(end_clock-start_clock)/(float)CLOCKS_PER_SEC;
-    
+   
     
     cv::Mat rgb;
     cv::cvtColor(yuv_8bit,rgb,CV_YUV2BGR_YUYV);
@@ -356,51 +340,41 @@ int read_frame(camera_v4l2_core *camera,int cameraID,float * p_Img)
     //yuv_10bit.convertTo(yuv_8bit,CV_8UC2,0.25);
     return 0;
 }
-void* test_thread(void * data){
-    for(;;){
-        char * a = (char *)data;
-        std::cout<<"thread"<<a<<std::endl;
-    }
-}
-void* process_thread(void* data)
+
+void* process_thread(void* data, float * p_Img)
 {
     
     //    apt_color=new APT::AptColor(height,width,APT::APT_COLOR_GRBG2RGB_12BIT);
     camera_v4l2_core* camera=(camera_v4l2_core*)data;
   
-    while(camera->status)
+
+    fd_set fds;
+    struct timeval tv;
+    int r;
+    FD_ZERO(&fds);
+    FD_SET(camera->fd,&fds);
+    
+    tv.tv_sec=7;
+    tv.tv_usec=0;
+    
+  
+    r=select(camera->fd+1,&fds,NULL,NULL,&tv);
+    if(-1==r)
     {
-        for(;;)
-        {
-
-            fd_set fds;
-            struct timeval tv;
-            int r;
-            FD_ZERO(&fds);
-            FD_SET(camera->fd,&fds);
-            
-            tv.tv_sec=7;
-            tv.tv_usec=0;
-            
-          
-            r=select(camera->fd+1,&fds,NULL,NULL,&tv);
-            if(-1==r)
-            {
-                
-                
-                perror("Fail to select");
-                exit(EXIT_FAILURE);
-            }
-            if(0==r)
-            {
-                perror("select time out\n");
-                return NULL;
-            }
-            
-            read_frame(camera,camera->cameraID,p_Img[camera->cameraID]);
-        }
+        
+         
+        perror("Fail to select");
+        exit(EXIT_FAILURE);
     }
-
+    if(0==r)
+    {
+        perror("select time out\n");
+        return NULL;
+    }
+    
+    read_frame(camera,camera->cameraID,p_Img);
+   
+    
     return 0;
 }
 
@@ -427,7 +401,6 @@ int main(int argc, char *argv[])
    
     camera_v4l2_core v4l2_core[4]={{0},{0},{0},{0}};
     
-   
     
    
     for(int i=0;i<2;i++){
@@ -452,13 +425,12 @@ int main(int argc, char *argv[])
         
     }
     
-    
-    //Mat Img[4];
+    float * p_Img[4];
+    Mat Img[4];
     for(int i=0;i<4;i++)
     {
-        p_Img[i] = (float *)malloc(3*height*width*sizeof(float));
-        ///cudaMallocManaged((void**)&p_Img[i], 3*height*width*sizeof(float));
-        //Img[i] = Mat(height,width,CV_32FC3,p_Img[i]);
+        cudaMallocManaged((void**)&p_Img[i], 3*height*width*sizeof(float));
+        Img[i] = Mat(height,width,CV_32FC3,p_Img[i]);
     }
     
     //From gpu stitching
@@ -466,56 +438,6 @@ int main(int argc, char *argv[])
     Stitching  stitch;
     Mat result,scaled;
    
-    pthread_t tid[4];
-    int rc[4];
-    
-    
-    for(int i=0;i<2;i++){
-        v4l2_core[i].cameraID =i;
-        bzero(p_Img[i],3*height*width*sizeof(float));
-        rc[i] = pthread_create(&tid[i],NULL,process_thread,&v4l2_core[i]);
-    }
-    //for test
-    float * p_buffer[4];
-    for(int i=0;i<4;i++)
-        cudaMallocManaged((void**)&p_buffer[i], 3*height*width*sizeof(float));
-    
-
-    for(;;){
-    
-        
-        memcpy(p_buffer[0],p_Img[0],3*height*width*sizeof(float));
-        memcpy(p_buffer[1],p_Img[1],3*height*width*sizeof(float));
-        memcpy(p_buffer[2],p_Img[0],3*height*width*sizeof(float));
-        memcpy(p_buffer[3],p_Img[1],3*height*width*sizeof(float));
-        
-        
-        
-        //std::cout<<"stitching start..."<<std::endl;
-        stitch.updateImage(p_buffer);
-        stitch.stitching(result);
-        cv::resize(result,scaled,Size(),0.5,0.5);
-        cv::imshow("result",scaled);
-        //waitKey(1);
-        
-        /*
-        cv::resize(Img[2],scaled,Size(),0.5,0.5);
-        cv::imshow("cam2",scaled);
-        
-        cv::resize(Img[3],scaled,Size(),0.5,0.5);
-        cv::imshow("cam3",scaled);
-        waitKey(1);
-       */
-        /*
-        //cv::waitKey(1000);
-        cv::resize(Img[0],scaled,Size(),0.5,0.5);
-        cv::imshow("result",scaled);
-        
-        waitKey(10);
-        */
-        
-    }
-    /*
     for(;;)
     {
 
@@ -527,7 +449,7 @@ int main(int argc, char *argv[])
             //std::cout<<i<<std::endl;
             
             //25fps
-            process_thread(&v4l2_core[i]);
+            process_thread(&v4l2_core[i],p_Img[i]);
         }
     
   
@@ -536,7 +458,7 @@ int main(int argc, char *argv[])
             //read_frame(&v4l2_core[i],i);
             v4l2_core[i].cameraID =i;
             //std::cout<<i<<std::endl;
-            process_thread(&v4l2_core[i-2]);
+            process_thread(&v4l2_core[i-2],p_Img[i]);
             
         }
             
@@ -556,7 +478,7 @@ int main(int argc, char *argv[])
         //cout<<"Average Running time: "<<(double)((end-begin)/CLOCKS_PER_SEC*1000)<<"ms"<<endl;
         waitKey(1);
     }
-    */
+    
     
     
         

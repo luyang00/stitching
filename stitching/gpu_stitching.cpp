@@ -375,8 +375,7 @@ Stitching::Stitching(){
     /*----------output initialize*/
     cudaMallocManaged((void**)&p_stichingDataAddress, 3*IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(float));
     
-    
-    
+   
     
     cout<<"load configuration"<<endl;
     
@@ -396,6 +395,8 @@ void Stitching::updateImage(float * Img[4]){
 
   
 }
+
+
 void Stitching::loadImages(){
     Mat images_8UC3[4],images_32FC3[4];//currently not use image 8UC3 because of the need of matrix multiply
     
