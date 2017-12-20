@@ -111,19 +111,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named test_gpu
-
-# Build rule for target.
-test_gpu: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 test_gpu
-.PHONY : test_gpu
-
-# fast build rule for target.
-test_gpu/fast:
-	$(MAKE) -f CMakeFiles/test_gpu.dir/build.make CMakeFiles/test_gpu.dir/build
-.PHONY : test_gpu/fast
-
-#=============================================================================
 # Target rules for targets named stitching
 
 # Build rule for target.
@@ -171,7 +158,6 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... test_gpu"
 	@echo "... stitching"
 	@echo "... stitching.o"
 	@echo "... stitching.i"

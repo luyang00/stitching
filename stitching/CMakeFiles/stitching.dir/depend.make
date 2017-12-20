@@ -21,6 +21,4 @@ CMakeFiles/stitching.dir/stitching.cpp.o: /Users/yang/Downloads/opencv-2.4.13.4/
 CMakeFiles/stitching.dir/stitching.cpp.o: /Users/yang/Downloads/opencv-2.4.13.4/modules/imgproc/include/opencv2/imgproc/types_c.h
 CMakeFiles/stitching.dir/stitching.cpp.o: /Users/yang/Downloads/opencv-2.4.13.4/modules/legacy/include/opencv2/legacy/legacy.hpp
 CMakeFiles/stitching.dir/stitching.cpp.o: /Users/yang/Downloads/opencv-2.4.13.4/modules/ml/include/opencv2/ml/ml.hpp
-CMakeFiles/stitching.dir/stitching.cpp.o: /Users/yang/Downloads/opencv-2.4.13.4/modules/nonfree/include/opencv2/nonfree/features2d.hpp
-CMakeFiles/stitching.dir/stitching.cpp.o: /Users/yang/Downloads/opencv-2.4.13.4/modules/nonfree/include/opencv2/nonfree/nonfree.hpp
 

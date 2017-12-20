@@ -9,13 +9,11 @@
 /Users/yang/Code/stitching/stitching/stitching.cpp
 opencv2/highgui/highgui.hpp
 -
-opencv2/nonfree/nonfree.hpp
-/Users/yang/Code/stitching/stitching/opencv2/nonfree/nonfree.hpp
 opencv2/legacy/legacy.hpp
 /Users/yang/Code/stitching/stitching/opencv2/legacy/legacy.hpp
 iostream
 -
-Math.h
+time.h
 -
 
 /Users/yang/Downloads/opencv-2.4.13.4/modules/calib3d/include/opencv2/calib3d/calib3d.hpp
@@ -187,12 +185,4 @@ string
 -
 iostream
 -
-
-/Users/yang/Downloads/opencv-2.4.13.4/modules/nonfree/include/opencv2/nonfree/features2d.hpp
-opencv2/features2d/features2d.hpp
-/Users/yang/Downloads/opencv-2.4.13.4/modules/nonfree/include/opencv2/nonfree/opencv2/features2d/features2d.hpp
-
-/Users/yang/Downloads/opencv-2.4.13.4/modules/nonfree/include/opencv2/nonfree/nonfree.hpp
-opencv2/nonfree/features2d.hpp
-/Users/yang/Downloads/opencv-2.4.13.4/modules/nonfree/include/opencv2/nonfree/opencv2/nonfree/features2d.hpp
 
