@@ -107,7 +107,8 @@ int open_camera(camera_v4l2_core* camera,const char* dev)
     {
         return -1;
     }
-    if((fd=open(dev,O_RDWR|O_NONBLOCK))<0)
+    // if((fd=open(dev,O_RDWR|O_NONBLOCK))<0)
+    if((fd=open(dev,O_RDWR))<0)
     {
         return -1;
     }
@@ -290,10 +291,9 @@ int read_frame(camera_v4l2_core *camera,int cameraID,float * p_Img)
     buf.type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory=V4L2_MEMORY_MMAP;
     
-    
     char windowName[50];
     sprintf(windowName,"camera-%d",cameraID);
-     //cv::namedWindow(windowName,CV_WINDOW_NORMAL);
+    //cv::namedWindow(windowName,CV_WINDOW_NORMAL);
     //std::cout<<windowName << std::endl;
     //从队列中取缓冲区
     if(-1==ioctl(camera->fd,VIDIOC_DQBUF,&buf))
@@ -336,11 +336,18 @@ int read_frame(camera_v4l2_core *camera,int cameraID,float * p_Img)
     //cv::gpu::GpuMat gpu_img(height,width, CV_32FC3, p_Img);
     
     memcpy(p_Img,rgb.ptr<float>(0),3*height*width*sizeof(float));
-    Mat rrgb(height,width,CV_32FC3,p_Img);
+	/*  
+  Mat rrgb(height,width,CV_32FC3,p_Img);
     
    
+    Mat scaled;
+    cv::resize(rrgb,scaled,Size(),0.5,0.5);
+   
     
-    //cv::imshow(windowName,rrgb);
+    cv::imshow(windowName,scaled);
+    cv::waitKey(1);
+*/
+    /*
     int keypressed = cv::waitKey(1);
     if(key_pressed == 32)
     {
@@ -354,7 +361,9 @@ int read_frame(camera_v4l2_core *camera,int cameraID,float * p_Img)
         cv::imwrite(name_buffer, rgb);
     }
     //yuv_10bit.convertTo(yuv_8bit,CV_8UC2,0.25);
+     */
     return 0;
+    
 }
 void* test_thread(void * data){
     for(;;){
@@ -384,7 +393,8 @@ void* process_thread(void* data)
             
           
             r=select(camera->fd+1,&fds,NULL,NULL,&tv);
-            if(-1==r)
+        	std::cout<<"thread:"<<camera->cameraID<<"r: "<<r<<std::endl;
+	    if(-1==r)
             {
                 
                 
@@ -394,11 +404,12 @@ void* process_thread(void* data)
             if(0==r)
             {
                 perror("select time out\n");
-                return NULL;
+    //            return NULL;
             }
             
             read_frame(camera,camera->cameraID,p_Img[camera->cameraID]);
-        }
+        
+	}
     }
 
     return 0;
@@ -430,7 +441,7 @@ int main(int argc, char *argv[])
    
     
    
-    for(int i=0;i<2;i++){
+    for(int i=0;i<4;i++){
         
         if(open_camera(&v4l2_core[i],dev_name[i])!=0)
         {
@@ -463,14 +474,16 @@ int main(int argc, char *argv[])
     
     //From gpu stitching
    
-    Stitching  stitch;
+    Stitching  stitch(720,1280,1650,1250);
+    
+   
     Mat result,scaled;
    
     pthread_t tid[4];
     int rc[4];
     
     
-    for(int i=0;i<2;i++){
+    for(int i=0;i<4;i++){
         v4l2_core[i].cameraID =i;
         bzero(p_Img[i],3*height*width*sizeof(float));
         rc[i] = pthread_create(&tid[i],NULL,process_thread,&v4l2_core[i]);
@@ -486,18 +499,18 @@ int main(int argc, char *argv[])
         
         memcpy(p_buffer[0],p_Img[0],3*height*width*sizeof(float));
         memcpy(p_buffer[1],p_Img[1],3*height*width*sizeof(float));
-        memcpy(p_buffer[2],p_Img[0],3*height*width*sizeof(float));
-        memcpy(p_buffer[3],p_Img[1],3*height*width*sizeof(float));
+        memcpy(p_buffer[2],p_Img[2],3*height*width*sizeof(float));
+        memcpy(p_buffer[3],p_Img[3],3*height*width*sizeof(float));
         
         
         
-        //std::cout<<"stitching start..."<<std::endl;
+        std::cout<<"stitching start..."<<std::endl;
         stitch.updateImage(p_buffer);
         stitch.stitching(result);
         cv::resize(result,scaled,Size(),0.5,0.5);
         cv::imshow("result",scaled);
-        //waitKey(1);
-        
+   
+        cv::waitKey(1);
         /*
         cv::resize(Img[2],scaled,Size(),0.5,0.5);
         cv::imshow("cam2",scaled);

@@ -69,7 +69,7 @@ Point2f Stitching::computeROI( ROI * roi,Point2f * cameras_pos,int fusion_width)
     float k03,b03;
     calculateLineParam(cameras_pos[FRONT_CAMERA],cameras_pos[RIGHT_CAMERA],k03,b03);
     b03-=offset;
-    x=IMAGE_WIDTH;
+    x=out_width;
     y = k03 * x + b03;
     p1.x = x;
     p1.y = y;
@@ -111,7 +111,7 @@ Point2f Stitching::computeROI( ROI * roi,Point2f * cameras_pos,int fusion_width)
     float k13,b13;
     calculateLineParam(cameras_pos[BACK_CAMERA],cameras_pos[RIGHT_CAMERA],k13,b13);
     b13+=offset;
-    x=IMAGE_WIDTH;
+    x=out_width;
     y = k13 * x + b13;
     p4.x = x;
     p4.y = y;
@@ -135,11 +135,11 @@ Point2f Stitching::computeROI( ROI * roi,Point2f * cameras_pos,int fusion_width)
     
     
     //Make 8 ROI
-    makeROI(roi[0],Point2f(0,0),p0_f,p2_f,p1_f,Point2f(IMAGE_WIDTH,0));
+    makeROI(roi[0],Point2f(0,0),p0_f,p2_f,p1_f,Point2f(out_width,0));
     makeROI(roi[1],p0_f,p0_b,p2_b,p2_f);
     makeROI(roi[2],p0_b,p3_f,p5_f,p2_b);
     makeROI(roi[3],p3_f,p3_b,p5_b,p5_f);
-    makeROI(roi[4],p3_b,Point2f(0,IMAGE_HEIGHT),Point2f(IMAGE_WIDTH,IMAGE_HEIGHT),p4_b,p5_b);
+    makeROI(roi[4],p3_b,Point2f(0,out_height),Point2f(out_width,out_height),p4_b,p5_b);
     makeROI(roi[5],p5_f,p5_b,p4_b,p4_f);
     makeROI(roi[6],p2_b,p5_f,p4_f,p1_b);
     makeROI(roi[7],p2_f,p2_b,p1_b,p1_f);
@@ -152,7 +152,7 @@ Point2f Stitching::computeROI( ROI * roi,Point2f * cameras_pos,int fusion_width)
 }
 
 void Stitching::makeMask(ROI &roi,Mat & mask){
-    mask = Mat(IMAGE_HEIGHT, IMAGE_WIDTH, CV_8UC1,Scalar(0));
+    mask = Mat(out_height, out_width, CV_8UC1,Scalar(0));
     
     
     vector<Point> ROI_Poly;
@@ -167,11 +167,11 @@ void Stitching::makeMask(ROI &roi,Mat & mask){
 /*Alpha blending*/
 void Stitching::make3DMask(ROI &roi,Mat & p_masks_fusion,Mat & n_masks_fusion,int fusion_width){
     //generate positive mask_fusion
-    p_masks_fusion = Mat(IMAGE_HEIGHT, IMAGE_WIDTH, CV_32FC3,Scalar(0,0,0));
+    p_masks_fusion = Mat(out_height, out_width, CV_32FC3,Scalar(0,0,0));
     vector<Point> ROI_Poly,vertices;
     //make sure not overflow
     float y_start = (roi.vertices[0].y - 2.0 > 0)?(roi.vertices[0].y-2.0):0;
-    float y_end =(roi.vertices[3].y + 2.0 < IMAGE_HEIGHT)?(roi.vertices[3].y + 2.0):IMAGE_HEIGHT;
+    float y_end =(roi.vertices[3].y + 2.0 < out_height)?(roi.vertices[3].y + 2.0):out_height;
     vertices.push_back(Point(roi.vertices[0].x,y_start));
     vertices.push_back(Point(roi.vertices[0].x,y_start+4));
     vertices.push_back(Point(roi.vertices[3].x,y_end));
@@ -191,7 +191,7 @@ void Stitching::make3DMask(ROI &roi,Mat & p_masks_fusion,Mat & n_masks_fusion,in
         //cout<<1-i/(float)fusion_width<<endl;
     }
     //generate negative mask_fusion = 1-positive mask_fusion
-    Mat mask = Mat(IMAGE_HEIGHT, IMAGE_WIDTH, CV_32FC3,Scalar(0,0,0));
+    Mat mask = Mat(out_height, out_width, CV_32FC3,Scalar(0,0,0));
     approxPolyDP(roi.vertices, ROI_Poly, 1.0, true);
     // Fill polygon white
     fillConvexPoly(mask, &ROI_Poly[0], ROI_Poly.size(), Scalar(1.0,1.0,1.0), 8, 0);
@@ -354,8 +354,11 @@ void Stitching::initCuda(){
     cudaSetDeviceFlags(cudaDeviceMapHost);
     cudaFree(0);
 }
-Stitching::Stitching(){
+Stitching::Stitching(int in_height, int in_width,int out_height,int out_width){
     
+    
+    this->setInputResolution(in_height,in_width);
+    this->setOutputResolution(out_height,out_width);
     
     //fixed camera position
     
@@ -373,7 +376,7 @@ Stitching::Stitching(){
     
     
     /*----------output initialize*/
-    cudaMallocManaged((void**)&p_stichingDataAddress, 3*IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(float));
+    cudaMallocManaged((void**)&p_stichingDataAddress, 3*out_width*out_height*sizeof(float));
     
    
     
@@ -390,7 +393,7 @@ void Stitching::updateImage(float * Img[4]){
     
     for(int i=0;i<4;i++){
         
-        gpu_image[i] = cv::gpu::GpuMat(720,1280, CV_32FC3, Img[i]);
+        gpu_image[i] = cv::gpu::GpuMat(in_height,in_width, CV_32FC3, Img[i]);
     }
 
   
@@ -414,13 +417,13 @@ void Stitching::loadImages(){
     /*Allocate Zero-Copy memmory, give it to pointer p_DataAddress */
     float * p_DataAddress[4];
     for(int i=0;i<4;i++){
-        cudaMallocManaged((void**)&p_DataAddress[i], 3*720*1280*sizeof(float));
-        images_32FC3[i] = Mat(720,1280, CV_32FC3, p_DataAddress[i]);
+        cudaMallocManaged((void**)&p_DataAddress[i], 3*in_height*in_width*sizeof(float));
+        images_32FC3[i] = Mat(in_height,in_width, CV_32FC3, p_DataAddress[i]);
     }
 
     
     for(int i=0;i<4;i++){
-        gpu_image[i] = cv::gpu::GpuMat(720,1280, CV_32FC3, p_DataAddress[i]);
+        gpu_image[i] = cv::gpu::GpuMat(in_height,in_width, CV_32FC3, p_DataAddress[i]);
     }
     
     
@@ -438,7 +441,7 @@ void Stitching::loadImages(){
 }
 void Stitching::stitching(Mat & result){
    
-    cv::gpu::GpuMat gpu_stitching(IMAGE_HEIGHT,IMAGE_WIDTH, CV_32FC3, p_stichingDataAddress);
+    cv::gpu::GpuMat gpu_stitching(out_height,out_width, CV_32FC3, p_stichingDataAddress);
    
     undistort(gpu_image,gpu_undistortImg,gpu_mapx,gpu_mapy,INTER_LINEAR);
     
@@ -446,8 +449,19 @@ void Stitching::stitching(Mat & result){
    
    
    
-    result = Mat(IMAGE_HEIGHT,IMAGE_WIDTH,CV_32FC3,p_stichingDataAddress);
+    result = Mat(out_height,out_width,CV_32FC3,p_stichingDataAddress);
 
+}
+void Stitching::setOutputResolution(int out_height, int out_width){
+    this->out_height = out_height;
+    this->out_width = out_width;
+    std::cout<< "Output Size: " << out_width <<"x"<<out_height<<std::endl;
+    
+}
+void Stitching::setInputResolution(int in_height,int in_width){
+    this->in_height =  in_height;
+    this->in_width = in_width;
+    std::cout<< "Input Size: " << in_width <<"x"<<in_height<<std::endl;
 }
 
 /*

@@ -43,7 +43,8 @@ private:
     cv::gpu::GpuMat gpu_undistortImg[4];
     cv::gpu::GpuMat GPU_masks[8],GPU_masks_fusion[8],gpu_mapx[4],gpu_mapy[4];
    
-
+    int out_height,out_width;
+    int in_height,in_width;
     
     //temp solution
     float * p_stichingDataAddress;
@@ -64,7 +65,10 @@ private:
     
         
 public:
-    Stitching();
+    Stitching(int in_height, int in_width, int out_height,int out_width);
+    void setOutputResolution(int out_height, int out_width);
+    void setInputResolution(int in_height,int in_width);
+    void setCameraPosition(Point2f camera_pos[]);
     void loadImages();
     void updateImage(float * Img[]);
     void stitching(Mat & result);
