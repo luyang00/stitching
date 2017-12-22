@@ -111,44 +111,44 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named stitching
+# Target rules for targets named my12doom
 
 # Build rule for target.
-stitching: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 stitching
-.PHONY : stitching
+my12doom: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 my12doom
+.PHONY : my12doom
 
 # fast build rule for target.
-stitching/fast:
-	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/build
-.PHONY : stitching/fast
+my12doom/fast:
+	$(MAKE) -f CMakeFiles/my12doom.dir/build.make CMakeFiles/my12doom.dir/build
+.PHONY : my12doom/fast
 
-stitching.o: stitching.cpp.o
+test_my12doom.o: test_my12doom.cpp.o
 
-.PHONY : stitching.o
+.PHONY : test_my12doom.o
 
 # target to build an object file
-stitching.cpp.o:
-	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/stitching.cpp.o
-.PHONY : stitching.cpp.o
+test_my12doom.cpp.o:
+	$(MAKE) -f CMakeFiles/my12doom.dir/build.make CMakeFiles/my12doom.dir/test_my12doom.cpp.o
+.PHONY : test_my12doom.cpp.o
 
-stitching.i: stitching.cpp.i
+test_my12doom.i: test_my12doom.cpp.i
 
-.PHONY : stitching.i
+.PHONY : test_my12doom.i
 
 # target to preprocess a source file
-stitching.cpp.i:
-	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/stitching.cpp.i
-.PHONY : stitching.cpp.i
+test_my12doom.cpp.i:
+	$(MAKE) -f CMakeFiles/my12doom.dir/build.make CMakeFiles/my12doom.dir/test_my12doom.cpp.i
+.PHONY : test_my12doom.cpp.i
 
-stitching.s: stitching.cpp.s
+test_my12doom.s: test_my12doom.cpp.s
 
-.PHONY : stitching.s
+.PHONY : test_my12doom.s
 
 # target to generate assembly for a file
-stitching.cpp.s:
-	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/stitching.cpp.s
-.PHONY : stitching.cpp.s
+test_my12doom.cpp.s:
+	$(MAKE) -f CMakeFiles/my12doom.dir/build.make CMakeFiles/my12doom.dir/test_my12doom.cpp.s
+.PHONY : test_my12doom.cpp.s
 
 # Help Target
 help:
@@ -158,10 +158,10 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... stitching"
-	@echo "... stitching.o"
-	@echo "... stitching.i"
-	@echo "... stitching.s"
+	@echo "... my12doom"
+	@echo "... test_my12doom.o"
+	@echo "... test_my12doom.i"
+	@echo "... test_my12doom.s"
 .PHONY : help
 
 

@@ -10,6 +10,7 @@
 #include "cuda.h"
 #include "cuda_runtime_api.h"
 #include <time.h>
+#include "sse2neon.hpp"
 
 
 
@@ -39,14 +40,19 @@ private:
     Point2f cameras_pos[4];
     Mat masks[8];
     Mat masks_fusion[8];
-    cv::gpu::GpuMat gpu_image[4];
-    cv::gpu::GpuMat gpu_undistortImg[4];
+    Mat masks_neon[8];
+    Mat images_8UC3[4];
+    Mat images_undistort[4];
+    Mat mapx[4],mapy[4];
+    
+    cv::gpu::GpuMat gpu_image[4],gpu_undistortImg[4];
+    
     cv::gpu::GpuMat GPU_masks[8],GPU_masks_fusion[8],gpu_mapx[4],gpu_mapy[4];
    
     int out_height,out_width;
     int in_height,in_width;
     
-    //temp solution
+   
     float * p_stichingDataAddress;
    
     void saveConfiguration(Mat * masks,Mat * masks_fusion,CameraPos * cameras_pos,int fusion_width);
@@ -58,19 +64,22 @@ private:
     void make3DMask(ROI &roi,Mat & p_masks_fusion,Mat & n_masks_fusion,int fusion_width);
     void makeMasks(Mat * masks,Mat * masks_fusion,CameraPos * cameras_pos,int fusion_width);
     void stitching( gpu::GpuMat * gpu_image, gpu::GpuMat *gpu_masks,gpu::GpuMat *gpu_masks_fusion,gpu::GpuMat &gpu_stitching);
-    
+    void stitching( Mat * images_8UC3, Mat * masks_neon, Mat & image_stitching);
     void loadMap(String filename,Mat & mapx, Mat & mapy);
-    void loadConfiguration(gpu::GpuMat * gpu_map_x,gpu::GpuMat * gpu_map_y,Mat * masks,gpu::GpuMat *GPU_masks, Mat * masks_fusion,gpu::GpuMat * GPU_masks_fusion,CameraPos * cameras_pos,int fusion_width);
+    void loadMap4GPU(String filename,Mat & mapx, Mat & mapy);
+    void loadConfiguration(gpu::GpuMat * gpu_map_x,gpu::GpuMat * gpu_map_y);
+    void loadConfiguration(Mat * mapx,Mat * mapy);
     void undistort(gpu::GpuMat * src,gpu::GpuMat * dst,gpu::GpuMat * gpu_mapx,gpu::GpuMat * gpu_mapy,int flags);
-    
+    void undistort(Mat * src,Mat * dst, Mat * mapx,Mat * mapy,int flags);
+    void setOutputResolution(int out_height, int out_width);
+    void setInputResolution(int in_height,int in_width);
         
 public:
     Stitching(int in_height, int in_width, int out_height,int out_width);
-    void setOutputResolution(int out_height, int out_width);
-    void setInputResolution(int in_height,int in_width);
-    void setCameraPosition(Point2f camera_pos[]);
-    void loadImages();
-    void updateImage(float * Img[]);
+  
+    void setCameraPosition(Point2f camera_pos[]);//Camera Pos depending on
+    void loadImages();//For test
+    void updateImage(uchar * Img[]);
     void stitching(Mat & result);
     void initCuda();
     

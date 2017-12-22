@@ -54,10 +54,10 @@ void loadColoredImage(Mat * images){
     images[3] = Mat(IMAGE_HEIGHT,IMAGE_WIDTH,CV_8UC3,Scalar(255*3/4,255*3/4,255*3/4));
 }
 void loadImages(Mat * images_8UC3,Mat * images_32FC3 ){
-    images_8UC3[0] = imread("front_perspectiveImage.jpg");
-    images_8UC3[1] = imread("left_perspectiveImage.png");
-    images_8UC3[2] = imread("back_perspectiveImage.png");
-    images_8UC3[3] = imread("right_perspectiveImage.png");
+    images_8UC3[0] = imread("./input/front_perspectiveImage.jpg");
+    images_8UC3[1] = imread("./input/left_perspectiveImage.png");
+    images_8UC3[2] = imread("./input/back_perspectiveImage.png");
+    images_8UC3[3] = imread("./input/right_perspectiveImage.png");
     
     images_8UC3[0].convertTo( images_32FC3[0], CV_32FC3, 1.0/255);
     images_8UC3[1].convertTo( images_32FC3[1], CV_32FC3, 1.0/255);
@@ -289,8 +289,8 @@ void saveMapping(const Mat &image_stitching){
 #include <intrin.h>
 #include <tmmintrin.h>
 #else
-#include <x86intrin.h>
-#include <tmmintrin.h>
+#include "sse2neon.hpp"
+//#include <tmmintrin.h>
 #endif
 
 void stiching_my12doom(Mat *images, Mat *masks, Mat &image_out)
@@ -453,22 +453,25 @@ int main(int argc, char *argv[])
 		add(tmp, masks[i*2], masks_my12doom[i]);
 		cvtColor(masks_my12doom[i], masks_my12doom[i], CV_GRAY2BGR);
 	}
+    std::cout<<"here"<<std::endl;
 	imshow("m", masks_my12doom[0]);
+     std::cout<<"here"<<std::endl;
 	imshow("i", images_8UC3[0]);
 	printf("type:%d\n", masks_my12doom[0].type());
-
+    
+    
 
     clock_t begin = clock();
     
 	image_stitching = Mat(IMAGE_HEIGHT,IMAGE_WIDTH,CV_8UC3,Scalar(0,0,0));
-    for(int i=0;i<1000;i++){
+    for(int i=0;i<100;i++){
 //         image_stitching = Mat(IMAGE_HEIGHT,IMAGE_WIDTH,CV_32FC3,Scalar(0,0,0));
 //         stitching(images_32FC3,masks,masks_fusion,image_stitching);
 		stiching_my12doom(images_8UC3, masks_my12doom, image_stitching);
     }
     clock_t end = clock();
    
-	float t = ((double)(end-begin)*1000/CLOCKS_PER_SEC)/1000.0;
+	float t = ((double)(end-begin)*100/CLOCKS_PER_SEC)/100.0;
     printf("Average Running time: %.3fms\n", t);
    
     
@@ -476,10 +479,12 @@ int main(int argc, char *argv[])
     saveMapping(image_stitching);
     //resize & display
     Mat scaled_front,scaled_right,scaled_left,scaled_back,scaled_stitching;
+    /*
     resize(images_8UC3[0],scaled_front,Size(),0.5,0.5);
     resize(images_8UC3[1],scaled_back,Size(),0.5,0.5);
     resize(images_8UC3[2],scaled_left,Size(),0.5,0.5);
     resize(images_8UC3[3],scaled_right,Size(),0.5,0.5);
+    */
     resize(image_stitching,scaled_stitching,Size(),0.5,0.5);
     /*
     imshow("front",scaled_front);

@@ -60,39 +60,39 @@ CMAKE_SOURCE_DIR = /Users/yang/Code/stitching/stitching
 CMAKE_BINARY_DIR = /Users/yang/Code/stitching/stitching
 
 #=============================================================================
-# Target rules for target CMakeFiles/stitching.dir
+# Target rules for target CMakeFiles/my12doom.dir
 
 # All Build rule for target.
-CMakeFiles/stitching.dir/all:
-	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/depend
-	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/yang/Code/stitching/stitching/CMakeFiles --progress-num=1,2 "Built target stitching"
-.PHONY : CMakeFiles/stitching.dir/all
+CMakeFiles/my12doom.dir/all:
+	$(MAKE) -f CMakeFiles/my12doom.dir/build.make CMakeFiles/my12doom.dir/depend
+	$(MAKE) -f CMakeFiles/my12doom.dir/build.make CMakeFiles/my12doom.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/yang/Code/stitching/stitching/CMakeFiles --progress-num=1,2 "Built target my12doom"
+.PHONY : CMakeFiles/my12doom.dir/all
 
 # Include target in all.
-all: CMakeFiles/stitching.dir/all
+all: CMakeFiles/my12doom.dir/all
 
 .PHONY : all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/stitching.dir/rule: cmake_check_build_system
+CMakeFiles/my12doom.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/yang/Code/stitching/stitching/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/stitching.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/my12doom.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/yang/Code/stitching/stitching/CMakeFiles 0
-.PHONY : CMakeFiles/stitching.dir/rule
+.PHONY : CMakeFiles/my12doom.dir/rule
 
 # Convenience name for target.
-stitching: CMakeFiles/stitching.dir/rule
+my12doom: CMakeFiles/my12doom.dir/rule
 
-.PHONY : stitching
-
-# clean rule for target.
-CMakeFiles/stitching.dir/clean:
-	$(MAKE) -f CMakeFiles/stitching.dir/build.make CMakeFiles/stitching.dir/clean
-.PHONY : CMakeFiles/stitching.dir/clean
+.PHONY : my12doom
 
 # clean rule for target.
-clean: CMakeFiles/stitching.dir/clean
+CMakeFiles/my12doom.dir/clean:
+	$(MAKE) -f CMakeFiles/my12doom.dir/build.make CMakeFiles/my12doom.dir/clean
+.PHONY : CMakeFiles/my12doom.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/my12doom.dir/clean
 
 .PHONY : clean
 

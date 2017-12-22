@@ -224,6 +224,18 @@ void Stitching::makeMasks(Mat * masks,Mat * masks_fusion,CameraPos * cameras_pos
     make3DMask(roi[5],masks_fusion[2],masks_fusion[6],fusion_width);
     make3DMask(roi[7],masks_fusion[3],masks_fusion[7],fusion_width);
     
+    
+    Mat tmp;
+    int tbl[4][2] = {{0,3}, {4,1}, {5,6}, {2,7}};
+    for(int i=0; i<4; i++)
+    {
+        add(masks_fusion[tbl[i][0]], masks_fusion[tbl[i][1]], tmp);
+        cvtColor(tmp, tmp, CV_BGR2GRAY);
+        tmp.convertTo(tmp, CV_8U, 255);
+        add(tmp, masks[i*2], masks_neon[i]);
+        cvtColor(masks_neon[i], masks_neon[i], CV_GRAY2BGR);
+    }
+    //printf("type:%d\n", masks_neon[0].type());
 }
 
 
@@ -234,55 +246,53 @@ void Stitching::makeMasks(Mat * masks,Mat * masks_fusion,CameraPos * cameras_pos
 //10ms for 1650*1250 GPU-upload
 
 //GPU speedup stitching
-void Stitching::stitching( gpu::GpuMat * gpu_image, gpu::GpuMat *gpu_masks,gpu::GpuMat *gpu_masks_fusion,gpu::GpuMat &gpu_stitching){
+void Stitching::stitching( Mat * images, Mat * masks, Mat & image_out){
     
-    gpu::Stream stream;
-   
-    //gpu_image.copyTo(gpu_stitching,gpu_masks[0]);
-    
-    
-    //There is no need of fusion for ROI 0,2,4,6
-    for(int i=0;i<TOTAL_ROI;i+=2){
-        //add(image_stitching,images_32FC3[i/2],image_stitching,masks[i]);
-       
-        gpu_image[i/2].copyTo(gpu_stitching,gpu_masks[i]);
+    memset(image_out.data, 0, image_out.rows * image_out.cols * 3);
+    for(int i=0; i<4; i++)
+    {
+        //printf("image type:%d\n out type:%d\n", images[i].type(),image_out.type());
+        if (!(masks[i].type() == 16 && images[i].type() == 16 && image_out.type() == 16))
+        {
+            printf("arguments error\n");
+            return;
+        }
+        
+        int count = (images->rows * images->cols * 3) / 16;
+        __m128i zero = _mm_set1_epi8(0);
+        __m128i *pimage = (__m128i *)images[i].data;
+        __m128i *pmask = (__m128i *)masks[i].data;
+        __m128i *pout = (__m128i *)image_out.data;
+        for(int j=0; j<count; j++)
+        {
+            __m128i image = _mm_loadu_si128(pimage);
+            __m128i mask = _mm_loadu_si128(pmask);
+            __m128i out = _mm_loadu_si128(pout);
+            __m128i image1, image2;
+            __m128i mask1, mask2;
+            
+            image1 = _mm_unpackhi_epi8(image, zero);
+            image2 = _mm_unpacklo_epi8(image, zero);
+            mask1 = _mm_unpackhi_epi8(mask, zero);
+            mask2 = _mm_unpacklo_epi8(mask, zero);
+            
+            image1 = _mm_mullo_epi16(image1, mask1);
+            image2 = _mm_mullo_epi16(image2, mask2);
+            
+            image1 = _mm_srai_epi16(image1, 8);
+            image2 = _mm_srai_epi16(image2, 8);
+            image = _mm_packs_epi16(image2, image1);
+            
+            //             image = _mm_blendv_epi8(zero, image, mask);
+            out = _mm_add_epi8(out, image);
+            
+            _mm_storeu_si128(pout, out);
+            
+            pimage ++;
+            pmask ++;
+            pout ++;
+        }
     }
-   
-   
-    
-    //ROI1
-    gpu::GpuMat  layer1,layer2,mixed_layer;
-    //cout<<"1"<<endl;
-    gpu::multiply(gpu_image[0],gpu_masks_fusion[0],layer1,stream);
-    //cout<<"2"<<endl;
-    gpu::multiply(gpu_image[1],gpu_masks_fusion[4],layer2,stream);
-    //cout<<"3"<<endl;
-    gpu::add(layer1,layer2,mixed_layer);
-    //cout<<"4"<<endl;
-    mixed_layer.copyTo(gpu_stitching,gpu_masks[1]);
-
-    
-    //ROI3
-    
-    gpu::multiply(gpu_image[1],gpu_masks_fusion[1],layer1,stream);
-    gpu::multiply(gpu_image[2],gpu_masks_fusion[5],layer2,stream);
-    gpu::add(layer1,layer2,mixed_layer);
-    mixed_layer.copyTo(gpu_stitching,gpu_masks[3]);
-    //ROI5
-    
-    gpu::multiply(gpu_image[3],gpu_masks_fusion[2],layer1,stream);
-    gpu::multiply(gpu_image[2],gpu_masks_fusion[6],layer2,stream);
-    gpu::add(layer1,layer2,mixed_layer);
-    mixed_layer.copyTo(gpu_stitching,gpu_masks[5]);
-    //ROI7
-    
-    gpu::multiply(gpu_image[0],gpu_masks_fusion[3],layer1,stream);
-    gpu::multiply(gpu_image[3],gpu_masks_fusion[7],layer2,stream);
-    gpu::add(layer1,layer2,mixed_layer);
-    mixed_layer.copyTo(gpu_stitching,gpu_masks[7]);
-    
-    //imshow("mixed",mixed_layer);
-    
     
    
     
@@ -295,8 +305,28 @@ void Stitching::saveConfiguration(Mat * masks,Mat * masks_fusion,CameraPos * cam
 void Stitching::loadMap(String filename,Mat & mapx, Mat & mapy){
     //load remap param
     Mat map = imread(filename, CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR);
+    vector<Mat> ch3;
+    vector<Mat> ch2(2);
+    
+    
+    //split channel
+    split(map, ch3);
+    ch2[0] = ch3[0].clone();
+    ch2[1] = ch3[1].clone();
+    mapy = ch3[2].clone();
+    merge(&ch2[0],2,mapx);
+    
+    //16U to 16S
+    mapx.convertTo(mapx, CV_16SC2);
+
+
+  
+    
+}
+void Stitching::loadMap4GPU(String filename,Mat & mapx, Mat & mapy){
+    Mat map = imread(filename, CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR);
     //Mat testImage = imread("./map/u0.jpg");
-   // Mat mapx, mapy,output;
+    // Mat mapx, mapy,output;
     vector<Mat> ch3;
     vector<Mat> ch2;//(2);
     
@@ -305,48 +335,63 @@ void Stitching::loadMap(String filename,Mat & mapx, Mat & mapy){
     split(map, ch3);
     mapx = ch3[0].clone();
     mapy = ch3[1].clone();
-   
+    
     
     //16U to 16S
     mapx.convertTo(mapx, CV_32F);
     mapy.convertTo(mapy, CV_32F);
     
-    //cout<<"cpu"<<" xtype:"<<mapx.type()<<" ytype"<<mapy.type()<<" xsize"<<mapx.size()<<endl;
-
-  
     
 }
-void Stitching::loadConfiguration(gpu::GpuMat * gpu_map_x,gpu::GpuMat * gpu_map_y,Mat * masks,gpu::GpuMat *GPU_masks, Mat * masks_fusion,gpu::GpuMat * GPU_masks_fusion,CameraPos * cameras_pos,int fusion_width){
-    //load masks to GPU
-    for(int i=0;i<8;i++){
-        GPU_masks[i].upload(masks[i]);
-    }
-    for(int i=0;i<8;i++){
-        GPU_masks_fusion[i].upload(masks_fusion[i]);
-    }
+
+void Stitching::loadConfiguration(Mat * mapx,Mat * mapy){
     
     
-    Mat mapx,mapy;
-    loadMap("./map/map0.png",mapx,mapy);
+    
    
-    gpu_map_x[0].upload(mapx);gpu_map_y[0].upload(mapy);
-    loadMap("./map/map1.png",mapx,mapy);
-    gpu_map_x[1].upload(mapx);gpu_map_y[1].upload(mapy);
-    loadMap("./map/map2.png",mapx,mapy);
-    gpu_map_x[2].upload(mapx);gpu_map_y[2].upload(mapy);
-    loadMap("./map/map3.png",mapx,mapy);
-    gpu_map_x[3].upload(mapx);gpu_map_y[3].upload(mapy);
+    loadMap("./map/map0.png",mapx[0],mapy[0]);
+    
+    loadMap("./map/map1.png",mapx[1],mapy[1]);
+   
+    loadMap("./map/map2.png",mapx[2],mapy[2]);
+   
+    loadMap("./map/map3.png",mapx[3],mapy[3]);
 
     
+}
+void Stitching::loadConfiguration(gpu::GpuMat * gpu_map_x,gpu::GpuMat * gpu_map_y){
     
+    Mat mapx,mapy;
+    
+    loadMap4GPU("./map/map0.png",mapx,mapy);
+    gpu_map_x[0].upload(mapx);gpu_map_y[0].upload(mapy);
+    loadMap4GPU("./map/map1.png",mapx,mapy);
+    gpu_map_x[1].upload(mapx);gpu_map_y[1].upload(mapy);
+    loadMap4GPU("./map/map2.png",mapx,mapy);
+    gpu_map_x[2].upload(mapx);gpu_map_y[2].upload(mapy);
+    loadMap4GPU("./map/map3.png",mapx,mapy);
+    gpu_map_x[3].upload(mapx);gpu_map_y[3].upload(mapy);
+    
+    
+}
+
+void Stitching::undistort(Mat * src,Mat * dst, Mat * mapx,Mat * mapy,int flags=INTER_LINEAR){
+    //Mat view0,view1,view2,view3;
+   
+    for(int i=0;i<4;i++)
+        //gpu::remap(src[i], dst[i], gpu_mapx[i], gpu_mapy[i], flags);
+        cv::remap(src[i], dst[i], mapx[i], mapy[i], flags);
 }
 
 void Stitching::undistort(gpu::GpuMat * src,gpu::GpuMat * dst,gpu::GpuMat * gpu_mapx,gpu::GpuMat * gpu_mapy,int flags=INTER_LINEAR){
-    Mat view0,view1,view2,view3;
-   
-    for(int i=0;i<4;i++)
-        gpu::remap(src[i], dst[i], gpu_mapx[i], gpu_mapy[i], flags);
+    //Mat view0,view1,view2,view3;
     
+    for(int i=0;i<4;i++)
+    {
+        //cout<<"xtype:"<<gpu_mapx[0].type()<<"ytype"<<gpu_mapy[0].type()<<"xsize"<<gpu_mapx[0].size()<<endl;
+        gpu::remap(src[i], dst[i], gpu_mapx[i], gpu_mapy[i], flags);
+        
+    }
 }
 void Stitching::initCuda(){
     //init gpu
@@ -382,74 +427,62 @@ Stitching::Stitching(int in_height, int in_width,int out_height,int out_width){
     
     cout<<"load configuration"<<endl;
     
-    loadConfiguration(gpu_mapx,gpu_mapy,masks,GPU_masks,masks_fusion,GPU_masks_fusion,cameras_pos,FUSION_WIDTH);
+    loadConfiguration(gpu_mapx,gpu_mapy);
+    //loadConfiguration(mapx,mapy);
     
     //Wait for GPU Synchronize()
-    cudaDeviceSynchronize();
+   
     
-}
-void Stitching::updateImage(float * Img[4]){
-    //Undistorted GPU Image
+    uchar * p_undistortImg[4];
     
     for(int i=0;i<4;i++){
-        
-        gpu_image[i] = cv::gpu::GpuMat(in_height,in_width, CV_32FC3, Img[i]);
+        cudaMallocManaged((void**)&p_undistortImg[i], 3*out_width*out_height*sizeof(uchar));
+        gpu_undistortImg[i] = gpu::GpuMat(out_height,out_width, CV_8UC3, p_undistortImg[i]);
+        images_undistort[i] = Mat(out_height,out_width,CV_8UC3,p_undistortImg[i]);
     }
+    
+    cudaDeviceSynchronize();
+}
+
 
   
-}
+
 
 
 void Stitching::loadImages(){
-    Mat images_8UC3[4],images_32FC3[4];//currently not use image 8UC3 because of the need of matrix multiply
-    
-
-    images_8UC3[0] =  imread("./map/u0.jpg");
-    images_8UC3[1] =  imread("./map/u1.jpg");
-    images_8UC3[2] =  imread("./map/u2.jpg");
-    images_8UC3[3] =  imread("./map/u3.jpg");
-    
-    
-    
-
-    
-    
-    /*Allocate Zero-Copy memmory, give it to pointer p_DataAddress */
-    float * p_DataAddress[4];
+    uchar * p_DataAddress[4];
+    //Mat images_8UC3[4];
     for(int i=0;i<4;i++){
-        cudaMallocManaged((void**)&p_DataAddress[i], 3*in_height*in_width*sizeof(float));
-        images_32FC3[i] = Mat(in_height,in_width, CV_32FC3, p_DataAddress[i]);
+        cudaMallocManaged((void**)&p_DataAddress[i], 3*in_height*in_width*sizeof(uchar));
+        images_8UC3[i] = Mat(in_height,in_width, CV_8UC3, p_DataAddress[i]);
     }
+  
+    
+
+    images_8UC3[0] = imread("./map/u0.jpg");
+    images_8UC3[1] = imread("./map/u1.jpg");
+    images_8UC3[2] = imread("./map/u2.jpg");
+    images_8UC3[3] = imread("./map/u3.jpg");
+    
+    
+    
 
     
-    for(int i=0;i<4;i++){
-        gpu_image[i] = cv::gpu::GpuMat(in_height,in_width, CV_32FC3, p_DataAddress[i]);
-    }
     
-    
-    Mat scaled[4];
-    for(int i=0;i<4;i++)
-        resize(images_8UC3[i],scaled[i],Size(),1,1);
-    
-    scaled[0].convertTo( images_32FC3[0], CV_32FC3, 1.0/255);
-    scaled[1].convertTo( images_32FC3[1], CV_32FC3, 1.0/255);
-    scaled[2].convertTo( images_32FC3[2], CV_32FC3, 1.0/255);
-    scaled[3].convertTo( images_32FC3[3], CV_32FC3, 1.0/255);
+   
     
     
    
 }
 void Stitching::stitching(Mat & result){
    
-    cv::gpu::GpuMat gpu_stitching(out_height,out_width, CV_32FC3, p_stichingDataAddress);
-   
-    undistort(gpu_image,gpu_undistortImg,gpu_mapx,gpu_mapy,INTER_LINEAR);
+    //cv::gpu::GpuMat gpu_stitching(out_height,out_width, CV_32FC3, p_stichingDataAddress);
     
-    stitching(gpu_undistortImg,GPU_masks,GPU_masks_fusion,gpu_stitching);
+    
+    undistort(gpu_image,gpu_undistortImg,gpu_mapx,gpu_mapy);
+    //undistort(images_8UC3,images_undistort, mapx,mapy);
+    stitching(images_undistort,masks_neon,result);
    
-   
-   
-    result = Mat(out_height,out_width,CV_32FC3,p_stichingDataAddress);
 
 }
 void Stitching::setOutputResolution(int out_height, int out_width){
@@ -463,20 +496,33 @@ void Stitching::setInputResolution(int in_height,int in_width){
     this->in_width = in_width;
     std::cout<< "Input Size: " << in_width <<"x"<<in_height<<std::endl;
 }
+void Stitching::updateImage(uchar * Img[]){
+    /*
+    for(int i=0;i<4;i++){
+        images_8UC3[i] = Mat(in_height,in_width,CV_8UC3,Img[i]);
+    }
+     */
+    for(int i=0;i<4;i++){
+        gpu_image[i] = gpu::GpuMat(in_height,in_width,CV_8UC3,Img[i]);
+    }
+}
 
 /*
+
 int main(int argc, char *argv[])
 {
-    Mat result;
-    Stitching stitch;
+    Mat result(1650,1250,CV_8UC3,Scalar(0,0,0));
+    Stitching stitch(1650,1250,1650,1250);
+    stitch.loadImages();
     for(int i=0;i<100;i++){
-        stitch.loadImages();
+        
   
         stitch.stitching(result);
     }
-   
+    imshow("test",result);
+    waitKey(0);
 }
- */
+*/
 
    
     

@@ -1,3 +1,9 @@
+
+//resolution 1650 x 1250
+//all cpu 30ms
+//only stitching 1.23 ms
+//remapping by gpu 8ms
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -42,10 +48,9 @@ const int height=720;
 #define SEND_DATA 2
 
 using namespace cv;
-//cv::Mat rgb;
-bool addLine=false;
 
-float * p_Img[4];
+
+uchar * p_Img[4];
 
 
 typedef struct
@@ -107,8 +112,7 @@ int open_camera(camera_v4l2_core* camera,const char* dev)
     {
         return -1;
     }
-    // if((fd=open(dev,O_RDWR|O_NONBLOCK))<0)
-    if((fd=open(dev,O_RDWR))<0)
+    if((fd=open(dev,O_RDWR|O_NONBLOCK))<0)
     {
         return -1;
     }
@@ -280,7 +284,7 @@ void convert8bit(unsigned char* src,unsigned char* dst,int len)
     }
 }
 
-int read_frame(camera_v4l2_core *camera,int cameraID,float * p_Img)
+int read_frame(camera_v4l2_core *camera,int cameraID,uchar * p_Img)
 {
     
     int key_pressed;
@@ -317,51 +321,16 @@ int read_frame(camera_v4l2_core *camera,int cameraID,float * p_Img)
     
     
     
-    int pixel_num=height*width*2;
-    time_t start_clock=clock();
-    //    convert8bit(yuv_10bit.ptr(),yuv_8bit.ptr(),pixel_num);
-    time_t end_clock=clock();
-    //LOG(INFO)<<"convert8bit cost time:"<<(end_clock-start_clock)/(float)CLOCKS_PER_SEC;
-    start_clock=clock();
-    
-    end_clock=clock();
-    //LOG(INFO)<<"send cost time:"<<(end_clock-start_clock)/(float)CLOCKS_PER_SEC;
-    
-    
-    cv::Mat rgb;
+   
+    Mat rgb;
+ 
     cv::cvtColor(yuv_8bit,rgb,CV_YUV2BGR_YUYV);
-    rgb.convertTo(rgb,CV_32FC3,1.0/255);//7ms
+  
     
     
-    //cv::gpu::GpuMat gpu_img(height,width, CV_32FC3, p_Img);
     
-    memcpy(p_Img,rgb.ptr<float>(0),3*height*width*sizeof(float));
-	/*  
-  Mat rrgb(height,width,CV_32FC3,p_Img);
-    
-   
-    Mat scaled;
-    cv::resize(rrgb,scaled,Size(),0.5,0.5);
-   
-    
-    cv::imshow(windowName,scaled);
-    cv::waitKey(1);
-*/
-    /*
-    int keypressed = cv::waitKey(1);
-    if(key_pressed == 32)
-    {
-        img_count++;
-        //std::cout<<"save image"<<std::endl;
-        char name_buffer[50];
-        
-        sprintf(name_buffer, "./save/dev%c-%d.jpg", dev_name[10], img_count);
-        //dev_name char* int(count).jpg
-        //std::cout<< name_buffer<< std::endl;
-        cv::imwrite(name_buffer, rgb);
-    }
-    //yuv_10bit.convertTo(yuv_8bit,CV_8UC2,0.25);
-     */
+    memcpy(p_Img,rgb.ptr<uchar>(0),3*height*width*sizeof(uchar));
+	
     return 0;
     
 }
@@ -393,7 +362,7 @@ void* process_thread(void* data)
             
           
             r=select(camera->fd+1,&fds,NULL,NULL,&tv);
-        	std::cout<<"thread:"<<camera->cameraID<<"r: "<<r<<std::endl;
+        	//std::cout<<"thread:"<<camera->cameraID<<"r: "<<r<<std::endl;
 	    if(-1==r)
             {
                 
@@ -441,7 +410,7 @@ int main(int argc, char *argv[])
    
     
    
-    for(int i=0;i<4;i++){
+    for(int i=0;i<2;i++){
         
         if(open_camera(&v4l2_core[i],dev_name[i])!=0)
         {
@@ -467,7 +436,7 @@ int main(int argc, char *argv[])
     //Mat Img[4];
     for(int i=0;i<4;i++)
     {
-        p_Img[i] = (float *)malloc(3*height*width*sizeof(float));
+        p_Img[i] = (uchar *)malloc(3*height*width*sizeof(uchar));
         ///cudaMallocManaged((void**)&p_Img[i], 3*height*width*sizeof(float));
         //Img[i] = Mat(height,width,CV_32FC3,p_Img[i]);
     }
@@ -477,7 +446,8 @@ int main(int argc, char *argv[])
     Stitching  stitch(720,1280,1650,1250);
     
    
-    Mat result,scaled;
+    Mat result = Mat(1650,1250,CV_8UC3,Scalar(0,0,0));
+    Mat scaled;
    
     pthread_t tid[4];
     int rc[4];
@@ -485,32 +455,39 @@ int main(int argc, char *argv[])
     
     for(int i=0;i<4;i++){
         v4l2_core[i].cameraID =i;
-        bzero(p_Img[i],3*height*width*sizeof(float));
+        bzero(p_Img[i],3*height*width*sizeof(uchar));
         rc[i] = pthread_create(&tid[i],NULL,process_thread,&v4l2_core[i]);
     }
     //for test
-    float * p_buffer[4];
+    uchar * p_buffer[4];
     for(int i=0;i<4;i++)
-        cudaMallocManaged((void**)&p_buffer[i], 3*height*width*sizeof(float));
+        cudaMallocManaged((void**)&p_buffer[i], 3*height*width*sizeof(uchar));
     
-
+   
     for(;;){
+        
+         clock_t begin = clock();
+        
+        //Must copy because this memory is visited by gpu and cpu
+        memcpy(p_buffer[0],p_Img[0],3*height*width*sizeof(uchar));
+        memcpy(p_buffer[1],p_Img[1],3*height*width*sizeof(uchar));
+        memcpy(p_buffer[2],p_Img[2],3*height*width*sizeof(uchar));
+        memcpy(p_buffer[3],p_Img[3],3*height*width*sizeof(uchar));
+        
     
         
-        memcpy(p_buffer[0],p_Img[0],3*height*width*sizeof(float));
-        memcpy(p_buffer[1],p_Img[1],3*height*width*sizeof(float));
-        memcpy(p_buffer[2],p_Img[2],3*height*width*sizeof(float));
-        memcpy(p_buffer[3],p_Img[3],3*height*width*sizeof(float));
-        
-        
-        
-        std::cout<<"stitching start..."<<std::endl;
+       
         stitch.updateImage(p_buffer);
         stitch.stitching(result);
+        
+        clock_t end = clock();
+        cout<<"Time cost: "<<((double)(end-begin)*100/CLOCKS_PER_SEC)<<endl;
         cv::resize(result,scaled,Size(),0.5,0.5);
         cv::imshow("result",scaled);
-   
+        
         cv::waitKey(1);
+       
+   
         /*
         cv::resize(Img[2],scaled,Size(),0.5,0.5);
         cv::imshow("cam2",scaled);
@@ -528,6 +505,7 @@ int main(int argc, char *argv[])
         */
         
     }
+    
     /*
     for(;;)
     {
